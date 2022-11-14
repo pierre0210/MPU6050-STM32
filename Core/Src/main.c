@@ -46,7 +46,6 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 uint8_t mpuAddr = 0x68 << 1;
-float calibrate[3] = { 0.0 };
 float dt = 0.01;
 /* USER CODE END PV */
 
@@ -62,16 +61,23 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void calibration(float* cal) {
-	HAL_Delay(3000);
 	uint8_t rawData[6];
 	for(int i = 0; i < 3000; i++) {
+		uint8_t accStart = 0x3B;
+		HAL_I2C_Mem_Read(&hi2c1, mpuAddr, accStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
+		
+		// ACC
+		cal[0] += ((int16_t)(rawData[0] << 8 | rawData[1])) / 16384.0; // x
+		cal[1] += ((int16_t)(rawData[2] << 8 | rawData[3])) / 16384.0; // y
+		cal[2] += ((int16_t)(rawData[4] << 8 | rawData[5])) / 16384.0; // z
+		
 		uint8_t gyroStart = 0x43;
 		HAL_I2C_Mem_Read(&hi2c1, mpuAddr, gyroStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
 		
 		//GYRO
-		cal[0] += ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0; // x
-		cal[1] += ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0; // y
-		cal[2] += ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0; // z
+		cal[3] += ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0; // x
+		cal[4] += ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0; // y
+		cal[5] += ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0; // z
 		
 		HAL_Delay(3);
 	}
@@ -79,6 +85,9 @@ void calibration(float* cal) {
 	cal[0] /= 3000.0;
 	cal[1] /= 3000.0;
 	cal[2] /= 3000.0;
+	cal[3] /= 3000.0;
+	cal[4] /= 3000.0;
+	cal[5] /= 3000.0;
 }
 
 void readRaw(float *data, float* cal) {
@@ -87,16 +96,16 @@ void readRaw(float *data, float* cal) {
 	HAL_I2C_Mem_Read(&hi2c1, mpuAddr, accStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
 	
 	// ACC
-	data[0] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 16384.0; // x
-	data[1] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 16384.0; // y
-	data[2] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 16384.0; // z
+	data[0] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 16384.0 - cal[0]; // x
+	data[1] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 16384.0 - cal[1]; // y
+	data[2] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 16384.0 - cal[2] + 1; // z
 	uint8_t gyroStart = 0x43;
 	HAL_I2C_Mem_Read(&hi2c1, mpuAddr, gyroStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
 	
 	//GYRO
-	data[3] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0 - cal[0]; // x
-	data[4] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0 - cal[1]; // y
-	data[5] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0 - cal[2]; // z
+	data[3] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0 - cal[3]; // x
+	data[4] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0 - cal[4]; // y
+	data[5] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0 - cal[5]; // z
 }
 /* USER CODE END 0 */
 
@@ -131,6 +140,7 @@ int main(void)
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+	float calibrate[6];
 	calibration(calibrate);
   /* USER CODE END 2 */
 

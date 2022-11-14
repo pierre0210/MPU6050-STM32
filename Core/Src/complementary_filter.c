@@ -6,8 +6,8 @@
 
 void complementary(float* raw, float* filtered, float dt) {
 	float acc[2];
-	acc[0] = (180.0 / PI) * atan(raw[1] / sqrt(pow(raw[0], 2) + pow(raw[3], 2)));
-	acc[1] = (-180.0 / PI) * atan(raw[0] / sqrt(pow(raw[1], 2) + pow(raw[3], 2)));
+	acc[0] = (180.0 / PI) * atan(raw[1] / sqrt(pow(raw[0], 2) + pow(raw[2], 2)));
+	acc[1] = (-180.0 / PI) * atan(raw[0] / sqrt(pow(raw[1], 2) + pow(raw[2], 2)));
 	
 	float gyro[3];
 	gyro[0] = filtered[0] + (raw[3] * dt);
