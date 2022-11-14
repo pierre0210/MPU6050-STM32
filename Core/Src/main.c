@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "complementary_filter.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +46,8 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 uint8_t mpuAddr = 0x68 << 1;
+float calibrate[3] = { 0.0 };
+float dt = 0.01;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,7 +61,27 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void readRaw(float *data) {
+void calibration(float* cal) {
+	HAL_Delay(3000);
+	uint8_t rawData[6];
+	for(int i = 0; i < 3000; i++) {
+		uint8_t gyroStart = 0x43;
+		HAL_I2C_Mem_Read(&hi2c1, mpuAddr, gyroStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
+		
+		//GYRO
+		cal[0] += ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0; // x
+		cal[1] += ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0; // y
+		cal[2] += ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0; // z
+		
+		HAL_Delay(3);
+	}
+	
+	cal[0] /= 3000.0;
+	cal[1] /= 3000.0;
+	cal[2] /= 3000.0;
+}
+
+void readRaw(float *data, float* cal) {
 	uint8_t rawData[6];
 	uint8_t accStart = 0x3B;
 	HAL_I2C_Mem_Read(&hi2c1, mpuAddr, accStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
@@ -67,14 +90,13 @@ void readRaw(float *data) {
 	data[0] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 16384.0; // x
 	data[1] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 16384.0; // y
 	data[2] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 16384.0; // z
-	
 	uint8_t gyroStart = 0x43;
 	HAL_I2C_Mem_Read(&hi2c1, mpuAddr, gyroStart, I2C_MEMADD_SIZE_8BIT, rawData, 6, HAL_MAX_DELAY);
 	
 	//GYRO
-	data[3] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0; // x
-	data[4] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0; // y
-	data[5] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0; // z
+	data[3] = ((int16_t)(rawData[0] << 8 | rawData[1])) / 131.0 - cal[0]; // x
+	data[4] = ((int16_t)(rawData[2] << 8 | rawData[3])) / 131.0 - cal[1]; // y
+	data[5] = ((int16_t)(rawData[4] << 8 | rawData[5])) / 131.0 - cal[2]; // z
 }
 /* USER CODE END 0 */
 
@@ -109,25 +131,30 @@ int main(void)
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+	calibration(calibrate);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	float compFiltered[3];
+	float kalFiltered[3];
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		uint8_t msg[] = "-------\r\n";
-		HAL_UART_Transmit(&huart1, msg, sizeof(msg), HAL_MAX_DELAY);
 		float raw[6];
-		readRaw(raw);
-		char result[40] = { 0 };
-		sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f\r\n", raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
+		readRaw(raw, calibrate);
+		complementary(raw, compFiltered, dt);
+		char result[40] = { '\0' };
+		//sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f", raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
+		sprintf(result, "%.2f %.2f %.2f", compFiltered[0], compFiltered[1], compFiltered[2]);
 		HAL_UART_Transmit(&huart1, (uint8_t*)result, sizeof(result), HAL_MAX_DELAY);
 		
-		HAL_Delay(500);
+		uint8_t msg[] = "\r\n";
+		HAL_UART_Transmit(&huart1, msg, sizeof(msg), HAL_MAX_DELAY);
+		
+		HAL_Delay(dt*1000); // 1/1khz
   }
   /* USER CODE END 3 */
 }
