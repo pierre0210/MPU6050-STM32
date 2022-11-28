@@ -3,6 +3,7 @@
 ## Using STM32F103C8T6
 
 ## TODO
-- [ ] Complementary filter
+- [X] IMU Calibration
+- [X] Complementary filter
 - [ ] Kalman filter
 - [ ] SVD
