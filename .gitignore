@@ -1,4 +1,7 @@
 Drivers/
+MDK-ARM/
+.mxproject
+MPU6050.ioc
 *.o 
 *.d
 *.elf
