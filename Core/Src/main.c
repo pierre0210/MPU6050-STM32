@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
 #include "complementary_filter.h"
+#include "kalman_filter.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,9 +157,10 @@ int main(void)
 		float raw[6];
 		readRaw(raw, calibrate);
 		complementary(raw, compFiltered, dt);
-		char result[40] = { '\0' };
+		kalman(raw, kalFiltered, dt);
+		char result[42] = { '\0' };
 		//sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f", raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
-		sprintf(result, "%.2f %.2f %.2f", compFiltered[0], compFiltered[1], compFiltered[2]);
+		sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f", compFiltered[0], compFiltered[1], compFiltered[2], kalFiltered[0], kalFiltered[1], kalFiltered[2]);
 		HAL_UART_Transmit(&huart1, (uint8_t*)result, sizeof(result), HAL_MAX_DELAY);
 		
 		uint8_t msg[] = "\r\n";
