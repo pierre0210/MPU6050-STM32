@@ -3,53 +3,56 @@
 #include "math.h"
 
 #define PI 3.141592
-#define alpha 0.98
+
 
 Kalman_t kalmanX = {
-	.Q_angle = 0.001f,
-	.Q_bias = 0.003f,
-	.R_measure = 0.03f,
-	.K_angle = 0.0f,
-	.K_bias = 0.0f,
+	.Q = {
+		{0.001f, 0.0f},
+		{0.0f, 0.003f}
+	},
+	.R = 0.03f,
 	.P = {
-		{0.0f, 0.0f}, 
+		{0.0f, 0.0f},
 		{0.0f, 0.0f}
-	}
+	},
+	.X = {0.0f, 0.0f}
 };
 
 Kalman_t kalmanY = {
-	.Q_angle = 0.001f,
-	.Q_bias = 0.003f,
-	.R_measure = 0.03f,
-	.K_angle = 0.0f,
-	.K_bias = 0.0f,
+	.Q = {
+		{0.001f, 0.0f},
+		{0.0f, 0.003f}
+	},
+	.R = 0.03f,
 	.P = {
-		{0.0f, 0.0f}, 
+		{0.0f, 0.0f},
 		{0.0f, 0.0f}
-	}
+	},
+	.X = {0.0f, 0.0f}
 };
 
 void kalmanFilter(Kalman_t* Kalman, float acc, float gyro, float dt) {
-	Kalman->K_angle += (gyro - Kalman->K_bias) * dt;
+	Kalman->X[0] += (gyro - Kalman->X[1]) * dt;
 	
-	Kalman->P[0][0] += (Kalman->P[1][1] * dt - Kalman->P[0][1] - Kalman->P[1][0] + Kalman->Q_angle);
+	Kalman->P[0][0] += (Kalman->P[1][1] * dt - Kalman->P[0][1] - Kalman->P[1][0] + Kalman->Q[0][0]) * dt;
 	Kalman->P[0][1] -= Kalman->P[1][1] * dt;
 	Kalman->P[1][0] -= Kalman->P[1][1] * dt;
-	Kalman->P[1][1] += Kalman->Q_bias * dt;
+	Kalman->P[1][1] += Kalman->Q[1][1] * dt;
 	
-	float KZZ = Kalman->P[0][0] / (Kalman->P[0][0] + Kalman->R_measure);
-	float KZO = Kalman->P[1][0] / (Kalman->P[0][0] + Kalman->R_measure);
+	float y = acc - Kalman->X[0];
+	float s = Kalman->P[0][0] + Kalman->R;
+	Kalman->K[0] = Kalman->P[0][0] / s;
+	Kalman->K[1] = Kalman->P[1][0] / s;
 	
-	Kalman->K_angle += KZZ * (acc - Kalman->K_angle);
-	Kalman->K_bias += KZO * (acc - Kalman->K_angle);
+	Kalman->X[0] += Kalman->K[0] * y;
+	Kalman->X[1] += Kalman->K[1] * y;
 	
 	float PZZ = Kalman->P[0][0];
 	float PZO = Kalman->P[0][1];
-	
-	Kalman->P[0][0] -= KZZ * PZZ;
-	Kalman->P[0][1] -= KZZ * PZO;
-	Kalman->P[1][0] -= KZO * PZZ;
-	Kalman->P[1][1] -= KZO * PZO;
+	Kalman->P[0][0] -= Kalman->K[0] * PZZ;
+	Kalman->P[0][1] -= Kalman->K[0] * PZO;
+	Kalman->P[1][0] -= Kalman->K[1] * PZZ;
+	Kalman->P[1][1] -= Kalman->K[1] * PZO;
 }
 
 void kalman(float* raw, float* filtered, float dt) {
@@ -63,7 +66,7 @@ void kalman(float* raw, float* filtered, float dt) {
 	kalmanFilter(&kalmanX, acc[0], gyro[0], dt);
 	kalmanFilter(&kalmanY, acc[1], gyro[1], dt);
 	
-	filtered[0] = acc[0];
-	filtered[1] = acc[1];
+	filtered[0] = kalmanX.X[0];
+	filtered[1] = kalmanY.X[0];
 	filtered[2] += (raw[5] * dt);
 }

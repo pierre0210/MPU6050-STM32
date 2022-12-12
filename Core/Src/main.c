@@ -158,9 +158,10 @@ int main(void)
 		readRaw(raw, calibrate);
 		complementary(raw, compFiltered, dt);
 		kalman(raw, kalFiltered, dt);
-		char result[42] = { '\0' };
+		
+		char result[70] = { '\0' };
 		//sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f", raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
-		sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f", compFiltered[0], compFiltered[1], compFiltered[2], kalFiltered[0], kalFiltered[1], kalFiltered[2]);
+		sprintf(result, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f", raw[0], raw[1], raw[2], raw[3], raw[4], compFiltered[0], compFiltered[1], kalFiltered[0], kalFiltered[1]);
 		HAL_UART_Transmit(&huart1, (uint8_t*)result, sizeof(result), HAL_MAX_DELAY);
 		
 		uint8_t msg[] = "\r\n";

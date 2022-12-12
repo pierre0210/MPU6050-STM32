@@ -2,12 +2,11 @@
 #define _KALMAN_FILTER_H_
 
 typedef struct {
-	float Q_angle;
-	float Q_bias;
-	float R_measure;
-	float K_angle;
-	float K_bias;
+	float Q[2][2];
+	float R;
+	float X[2];
 	float P[2][2];
+	float K[2];
 } Kalman_t;
 
 void kalmanFilter(Kalman_t* Kalman, float acc, float gyro, float dt);
