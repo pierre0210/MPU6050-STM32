@@ -42,18 +42,20 @@ for i in range(1000):
 
 ser.close()
 
+plt.title("Pitch")
 plt.plot(time_x, comp_p, label="Complementary filter", color="g")
 plt.plot(time_x, kal_p, label="Kalman filter", color="r")
 plt.plot(time_x, acc_p, label="acc", color="y")
-plt.plot(time_x, gyro_p, label="gyro", color="k")
+plt.plot(time_x, gyro_p, label="gyro", color="b")
 plt.legend(loc="upper right")
 plt.grid()
 plt.show()
 
+plt.title("Row")
 plt.plot(time_x, comp_r, label="Complementary filter", color="g")
 plt.plot(time_x, kal_r, label="Kalman filter", color="r")
 plt.plot(time_x, acc_r, label="acc", color="y")
-plt.plot(time_x, gyro_r, label="gyro", color="k")
+plt.plot(time_x, gyro_r, label="gyro", color="b")
 plt.legend(loc="upper right")
 plt.grid()
 plt.show()
