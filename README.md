@@ -5,5 +5,4 @@
 ## TODO
 - [X] IMU Calibration
 - [X] Complementary filter
-- [ ] Kalman filter
-- [ ] SVD
+- [X] Kalman filter
