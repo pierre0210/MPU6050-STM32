@@ -24,8 +24,8 @@ while True:
 		rate(100)
 		angles: list[str] = ser.readline().decode("utf-8").replace("\0", "").replace("\r\n", "").split(" ")
 		print(angles)
-		pitch = float(angles[0]) * PI / 180.0
-		row = float(angles[1]) * PI / 180.0
+		pitch = float(angles[7]) * PI / 180.0
+		row = float(angles[8]) * PI / 180.0
 		print(pitch, row)
 		
 		imu_box.rotate(pitch-old_pitch, vector(-1, 0, 0), vector(0, 0, 0))
