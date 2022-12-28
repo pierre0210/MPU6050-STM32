@@ -6,3 +6,5 @@
 - [X] IMU Calibration
 - [X] Complementary filter
 - [X] Kalman filter
+
+[Hackmd Slide](https://hackmd.io/@pierre0210/MPU6050)
