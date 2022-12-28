@@ -8,7 +8,7 @@ ser.port = 'COM3'
 
 ser.open()
 
-scene.title = "IMU Simulation"
+scene.title = "IMU Monitor"
 scene.camera.axis = vector(0, -4, -10)
 scene.camera.pos = vector(0, 4, 10)
 
